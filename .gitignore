@@ -1,0 +1,8 @@
+bin/
+gen/
+build/
+target/
+.idea*/
+proguard_out/*
+proguard_out
+app
