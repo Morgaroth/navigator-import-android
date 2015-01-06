@@ -110,10 +110,10 @@
     scala.concurrent.forkjoin.LinkedTransferQueue$PaddedAtomicReference tail;
     scala.concurrent.forkjoin.LinkedTransferQueue$PaddedAtomicReference cleanMe;
 }
-# view AndroidManifest.xml #generated:13
+# view AndroidManifest.xml #generated:16
 -keep class android.test.InstrumentationTestRunner { <init>(...); }
 
-# view AndroidManifest.xml #generated:5
+# view AndroidManifest.xml #generated:8
 -keep class io.github.morgaroth.navigator_import.android.RoutesImporterActivity { <init>(...); }
 
 -keepattributes Signature

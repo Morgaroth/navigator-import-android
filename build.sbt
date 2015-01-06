@@ -34,7 +34,7 @@ resolvers += Resolver.sonatypeRepo("releases")
 libraryDependencies ++= Seq(
   "org.scaloid" %% "scaloid" % "3.6.1-10" withSources(),
   "org.scaloid" %% "scaloid-support-v4" % "3.6.1-10" withSources(),
-  "io.github.morgaroth" %% "navigator-import-core" % "1.0.9" withSources(),
+  "io.github.morgaroth" %% "navigator-import-core" % "1.1.0" withSources(),
   "com.google.android" % "support-v4" % "r7"
 )
 

@@ -67,10 +67,9 @@ class FetchingDataFragment extends FragmentWithAttached with TagUtil with HTTPUt
       try {
         val getGPXRequest = new HttpGet(s"$BACKEND_URL/api/mobile/gpx/${getArguments.getString(ID_KEY)}")
         val (resultCode, entity) = execute(getGPXRequest)
-        info(s"request to backend about GPX file end with status $resultCode")
-        debug(s"request to backend about GPX file end with status $resultCode and entity ${entity.substring(0, if (entity.length > 30) 30 else entity.length - 1)}")
+        info(s"request to backend about GPX file end with status $resultCode and entity ${entity.substring(0, if (entity.length > 100) 100 else entity.length - 1)}")
         (resultCode, Core.loadGpx(entity)) match {
-          case (200, gpx) =>
+          case (200, Right(gpx)) =>
             info("not fetched")
             attached.map(_.gpxFetched(gpx)).getOrElse(warn("gpx fetched, but no activity attached"))
           case _ =>
