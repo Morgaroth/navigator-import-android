@@ -29,6 +29,7 @@ proguardOptions in Android ++= Seq(
   "-keep class spray.**",
 //  "-keep class scala.refle**",
   "-keepclassmembers class io.github.** {*;}",
+  "-keepclassmembers class scala.concurrent.impl.Future {*;}",
   "-keep class spray.** { *; }",
   "-dontwarn scala.collection.**" // required from Scala 2.11.4
 )

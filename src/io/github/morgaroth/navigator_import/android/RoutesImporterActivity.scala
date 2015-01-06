@@ -31,7 +31,6 @@ with FetchingDataFragment.FetchingDataTrait {
   override def onCreate(savedInstanceState: Bundle) = {
     super.onCreate(savedInstanceState)
     val h = getSystemService(Context.WINDOW_SERVICE).asInstanceOf[WindowManager].getDefaultDisplay.getHeight
-    info(s"height $h")
     setContentView(new SVerticalLayout {
       this += {
         val containerL = new SFrameLayout {}.<<(FILL_PARENT, (h - 30 - 50) dip).>>

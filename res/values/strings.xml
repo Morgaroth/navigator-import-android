@@ -4,4 +4,5 @@
     <string name="app_name">Hello Scaloid! for sbt</string>
     <string name="Please_wait_scanning_is_turning_on">Please wait…\nScanning is turning on</string>
     <string name="Please_wait_fetching_is_in_progress">Please wait…\nFetching data from server\nis in progress</string>
+    <string name="Please_wait_merging_is_in_progress">Please wait…\nAppending your route\nis in progress</string>
 </resources>
