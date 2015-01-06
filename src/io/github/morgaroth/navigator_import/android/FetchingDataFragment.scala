@@ -10,7 +10,7 @@ import io.github.morgaroth.navigator_import.android.FetchingDataFragment.Fetchin
 import io.github.morgaroth.navigator_import.android.R.string.Please_wait_fetching_is_in_progress
 import io.github.morgaroth.navigator_import.android.RoutesImporterActivity.BACKEND_URL
 import io.github.morgaroth.navigator_import.android.ScanQRCodeFragment.{SCAN_BARCODE_REQUEST_CODE, ScanQRCodeTrait}
-import io.github.morgaroth.navigator_import.android.utils.FragmentWithAttached
+import io.github.morgaroth.navigator_import.android.utils.{GPXGet, GPXGetProtocol, FragmentWithAttached}
 import io.github.morgaroth.navigator_import.core.Core
 import org.apache.http.client.methods.{HttpUriRequest, HttpGet}
 import org.apache.http.impl.client.DefaultHttpClient
@@ -19,10 +19,14 @@ import org.scaloid.common._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
+import spray.json._
+
+import scala.language.reflectiveCalls
+
 object FetchingDataFragment {
 
   trait FetchingDataTrait {
-    def gpxFetched(gpx: GPX): Unit
+    def gpxFetched(gpx: GPXGet): Unit
 
     def gpxFetchingFailNoInternet(): Unit
 
@@ -55,7 +59,7 @@ trait HTTPUtils {
 
 }
 
-class FetchingDataFragment extends FragmentWithAttached with TagUtil with HTTPUtils {
+class FetchingDataFragment extends FragmentWithAttached with TagUtil with HTTPUtils with GPXGetProtocol{
 
   import FetchingDataFragment.ID_KEY
 
@@ -65,18 +69,18 @@ class FetchingDataFragment extends FragmentWithAttached with TagUtil with HTTPUt
     info("starting fetching data")
     Future {
       try {
-        val getGPXRequest = new HttpGet(s"$BACKEND_URL/api/mobile/gpx/${getArguments.getString(ID_KEY)}")
+        val getGPXRequest = new HttpGet(s"$BACKEND_URL/api/gpx/mobile/${getArguments.getString(ID_KEY)}")
         val (resultCode, entity) = execute(getGPXRequest)
-        info(s"request to backend about GPX file end with status $resultCode and entity ${entity.substring(0, if (entity.length > 100) 100 else entity.length - 1)}")
-        (resultCode, Core.loadGpx(entity)) match {
+        info(s"request to backend about GPX file end with status $resultCode and entity $entity")
+        (resultCode, entity.parseMyGPX) match {
           case (200, Right(gpx)) =>
-            info("not fetched")
+            info(s"fetched gpx ${gpx.toString}")
             attached.map(_.gpxFetched(gpx)).getOrElse(warn("gpx fetched, but no activity attached"))
           case _ =>
             warn("not fetched")
             attached.map(_.gpxFetchingFailSomeError()).getOrElse(warn("gpx not fetched, and no activity attached"))
         }
-      } catch {
+      }catch {
         case t: Throwable =>
           error("error during fetching data from serwer", t)
           attached.map(_.gpxFetchingFailSomeError()).getOrElse(warn("gpx not fetched, and no activity attached"))

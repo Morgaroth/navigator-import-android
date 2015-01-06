@@ -21,11 +21,15 @@ proguardCache in Android ++= Seq(
 )
 
 proguardOptions in Android ++= Seq(
-  //  "-dontobfuscate",
-  //  "-dontoptimize",
-  "-keepattributes Signature",
-  "-printseeds proguard_out/seeds.txt",
-  "-printusage proguard_out/usage.txt",
+  "-dontobfuscate",
+  "-keepattributes Signature,EnclosingMethod,InnerClasses",
+  "-printseeds seeds.txt",
+  "-keepattributes *Annotation*",
+  "-printusage usage.txt",
+  "-keep class spray.**",
+//  "-keep class scala.refle**",
+  "-keepclassmembers class io.github.** {*;}",
+  "-keep class spray.** { *; }",
   "-dontwarn scala.collection.**" // required from Scala 2.11.4
 )
 
@@ -35,6 +39,7 @@ libraryDependencies ++= Seq(
   "org.scaloid" %% "scaloid" % "3.6.1-10" withSources(),
   "org.scaloid" %% "scaloid-support-v4" % "3.6.1-10" withSources(),
   "io.github.morgaroth" %% "navigator-import-core" % "1.1.0" withSources(),
+  "io.spray" %% "spray-json" % "1.3.1" withSources(),
   "com.google.android" % "support-v4" % "r7"
 )
 
@@ -43,7 +48,6 @@ useProguard in Android := true
 buildInfoSettings
 
 sourceGenerators in Compile <+= buildInfo
-
 
 buildInfoKeys := Seq[BuildInfoKey](version, buildInfoBuildNumber)
 

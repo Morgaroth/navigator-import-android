@@ -8,7 +8,7 @@ import android.view.Gravity.CENTER_HORIZONTAL
 import android.view.WindowManager
 import com.droelf.gpxparser.gpxtype.GPX
 import io.github.morgaroth.navigator_import.android.build.BuildInfo
-import io.github.morgaroth.navigator_import.android.utils.WithDelayed
+import io.github.morgaroth.navigator_import.android.utils.{GPXGet, WithDelayed}
 import org.scaloid.common._
 
 import scala.language.postfixOps
@@ -76,7 +76,7 @@ with FetchingDataFragment.FetchingDataTrait {
     delayed(startScreen(), 100)
   }
 
-  override def gpxFetched(gpx: GPX): Unit = {
+  override def gpxFetched(gpx: GPXGet): Unit = {
     toast("fetched")
     info(gpx.toString())
     delayed(startScreen(), 100)
