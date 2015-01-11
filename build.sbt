@@ -31,7 +31,11 @@ proguardOptions in Android ++= Seq(
   "-keepclassmembers class io.github.** {*;}",
   "-keepclassmembers class scala.concurrent.impl.Future {*;}",
   "-keep class spray.** { *; }",
-  "-dontwarn scala.collection.**" // required from Scala 2.11.4
+  "-dontwarn scala.collection.**", // required from Scala 2.11.4
+  "-keepclassmembers class io.github.morgaroth.navigator_import.** implements android.os.Parcelable {public static final android.os.Parcelable$Creator *;}",
+  "-dontnote spray.json.**", // actually
+  "-dontnote org.scaloid.**", // actually
+  "-dontnote io.github.morgaroth.**" // actually
 )
 
 resolvers += Resolver.sonatypeRepo("releases")

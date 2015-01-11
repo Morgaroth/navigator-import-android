@@ -15,8 +15,10 @@ case class WaypointGPX(name: String, lat: Double, lon: Double) extends Parcelabl
     dest.writeDouble(lat)
     dest.writeDouble(lon)
   }
+}
 
-  val CREATOR: Parcelable.Creator[WaypointGPX] = new Parcelable.Creator[WaypointGPX]() {
+object WaypointGPX {
+  final val CREATOR: Parcelable.Creator[WaypointGPX] = new Parcelable.Creator[WaypointGPX]() {
     override def createFromParcel(source: Parcel): WaypointGPX =
       WaypointGPX(source.readString(), source.readDouble(), source.readDouble())
 
@@ -25,7 +27,7 @@ case class WaypointGPX(name: String, lat: Double, lon: Double) extends Parcelabl
 }
 
 trait WaypointGPXProtocol extends DefaultJsonProtocol {
-  implicit val WaypointGPXJsonProtocol = jsonFormat3(WaypointGPX)
+  implicit val WaypointGPXJsonProtocol = jsonFormat3(WaypointGPX.apply)
 }
 
 case class GPXGet(waypoints: List[WaypointGPX]) extends android.os.Parcelable {
@@ -37,7 +39,10 @@ case class GPXGet(waypoints: List[WaypointGPX]) extends android.os.Parcelable {
     dest.writeParcelableArray(waypoints.toArray, 0)
   }
 
-  val CREATOR: Parcelable.Creator[GPXGet] = new Parcelable.Creator[GPXGet]() {
+}
+
+object GPXGet {
+  final val CREATOR: Parcelable.Creator[GPXGet] = new Parcelable.Creator[GPXGet]() {
     override def createFromParcel(source: Parcel): GPXGet =
       GPXGet(source.readParcelableArray(null).asInstanceOf[Array[WaypointGPX]].toList)
 
@@ -47,7 +52,7 @@ case class GPXGet(waypoints: List[WaypointGPX]) extends android.os.Parcelable {
 }
 
 trait GPXGetProtocol extends DefaultJsonProtocol with WaypointGPXProtocol {
-  implicit val GPXGetJsonProtocol = jsonFormat1(GPXGet)
+  implicit val GPXGetJsonProtocol = jsonFormat1(GPXGet.apply)
 
   implicit def wrapToParsableGPXGet(json: String): Object {def parseMyGPX: Either[DeserializationException, GPXGet] with Product with Serializable} = new {
     def parseMyGPX = try Right(GPXGetJsonProtocol.read(json.parseJson))

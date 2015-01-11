@@ -101,7 +101,7 @@ class RouteMergingFragment extends FragmentWithAttached with TagUtil {
 //      (maybeRoutingPoints.right.map { rp =>
 ////        rp.toXML
 //      })
-    })
+
     new SFrameLayout {
       STextView(Please_wait_merging_is_in_progress).<<.wrap.Gravity(CENTER).>>
     }

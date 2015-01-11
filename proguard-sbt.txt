@@ -126,3 +126,7 @@
 -keepclassmembers class scala.concurrent.impl.Future {*;}
 -keep class spray.** { *; }
 -dontwarn scala.collection.**
+-keepclassmembers class io.github.morgaroth.navigator_import.** implements android.os.Parcelable {public static final android.os.Parcelable$Creator *;}
+-dontnote spray.json.**
+-dontnote org.scaloid.**
+-dontnote io.github.morgaroth.**

@@ -44,15 +44,15 @@ with FetchingDataFragment.FetchingDataTrait {
   }
 
   def startScreen() = {
-    getSupportFragmentManager.beginTransaction().replace(container, startFragment).commit()
+    getSupportFragmentManager.beginTransaction().replace(container, startFragment).commitAllowingStateLoss()
   }
 
   def scanQR() = {
-    getSupportFragmentManager.beginTransaction().replace(container, scanQRFragment).commit()
+    getSupportFragmentManager.beginTransaction().replace(container, scanQRFragment).commitAllowingStateLoss()
   }
 
   def fetchGPX(id: String) = {
-    getSupportFragmentManager.beginTransaction().replace(container, FetchingDataFragment(id)).commit()
+    getSupportFragmentManager.beginTransaction().replace(container, FetchingDataFragment(id)).commitAllowingStateLoss()
   }
 
   override def userWants: Unit = {
@@ -62,7 +62,7 @@ with FetchingDataFragment.FetchingDataTrait {
 
   override def qrScanningAborted(): Unit = {
     toast("scanning aborted")
-    startScreen()
+    delayed(startScreen(), 50)
   }
 
   override def qrScanned(id: String): Unit = {
