@@ -1,6 +1,6 @@
 package io.github.morgaroth.navigator_import.android
 
-import java.io.File
+import java.io.{PrintWriter, File}
 import java.text.SimpleDateFormat
 
 import android.os.Bundle
@@ -11,6 +11,7 @@ import io.github.morgaroth.navigator_import.android.R.string.Please_wait_merging
 import io.github.morgaroth.navigator_import.android.RouteMergingFragment.LoadingMapFactorRouteFileTrait
 import io.github.morgaroth.navigator_import.android.RoutesImporterActivity.BACKEND_URL
 import io.github.morgaroth.navigator_import.android.utils.{WaypointGPX, GPXGet, FragmentWithAttached, GPXGetProtocol}
+import io.github.morgaroth.navigator_import.core.Core
 import io.github.morgaroth.navigator_import.core.models.mapfactor.routeFile.{Waypoint, Route, RoutingPoints}
 import org.apache.http.client.methods.HttpGet
 import org.scaloid.common._
@@ -28,7 +29,7 @@ object RouteMergingFragment {
   }
 
   def apply(gpx: GPXGet) = {
-    val f = new FetchingDataFragment
+    val f = new RouteMergingFragment
     f.setArguments(args(gpx))
     f
   }
@@ -49,7 +50,7 @@ class RouteMergingFragment extends FragmentWithAttached with TagUtil {
 
   import RouteMergingFragment._
 
-  val input = new SEditText
+  var input: SEditText = _
 
   def itudeToLong(itude: Double): Long = (itude * 60 * 60 * 1000).toLong
 
@@ -58,7 +59,8 @@ class RouteMergingFragment extends FragmentWithAttached with TagUtil {
   def fromGPXWpt(x: WaypointGPX): Waypoint = Waypoint(x.name, x.lat, x.lon)
 
   override def onCreateView(inflater: LayoutInflater, container: ViewGroup, savedInstanceState: Bundle): View = {
-    info("starting fetching data")
+    info("starting merging data")
+    input = new SEditText
 
     val f = new SimpleDateFormat()
 
@@ -95,12 +97,22 @@ class RouteMergingFragment extends FragmentWithAttached with TagUtil {
         val newRoute = Route(name, departure, wpts, destination)
         rp.copy(rest = newRoute :: rp.rest)
       }, file)
+    }).map(x => x.map { FileAndRP =>
+      val (maybeRoutingPoints, file) = FileAndRP
+      maybeRoutingPoints.right.map { rp =>
+        val xml = Core.toXML(rp).text
+        val writer = new PrintWriter(file)
+        debug(s"generated xml: $xml")
+        writer.write(xml)
+        writer.flush()
+        writer.close()
+        xml
+      }.left.map { throwable =>
+        toast("cannot perform merging")
+        error("cannot perform merging", throwable)
+        throwable
+      }
     })
-//      .map(x => x.map { FileAndRP =>
-//      val (maybeRoutingPoints, file) = FileAndRP
-//      (maybeRoutingPoints.right.map { rp =>
-////        rp.toXML
-//      })
 
     new SFrameLayout {
       STextView(Please_wait_merging_is_in_progress).<<.wrap.Gravity(CENTER).>>

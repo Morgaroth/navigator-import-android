@@ -54,10 +54,11 @@ object GPXGet {
 trait GPXGetProtocol extends DefaultJsonProtocol with WaypointGPXProtocol {
   implicit val GPXGetJsonProtocol = jsonFormat1(GPXGet.apply)
 
-  implicit def wrapToParsableGPXGet(json: String): Object {def parseMyGPX: Either[DeserializationException, GPXGet] with Product with Serializable} = new {
+  implicit def wrapToParsableGPXGet(json: String): Object {def parseMyGPX: Either[RuntimeException, GPXGet] with Product with Serializable} = new {
     def parseMyGPX = try Right(GPXGetJsonProtocol.read(json.parseJson))
     catch {
       case d: DeserializationException => Left(d)
+      case d: SerializationException => Left(d)
     }
 
   }

@@ -20,7 +20,8 @@ object RoutesImporterActivity {
 class RoutesImporterActivity extends FragmentActivity with SContext with WithDelayed
 with ScanQRCodeFragment.ScanQRCodeTrait
 with StartFragment.StartFragmentTrait
-with FetchingDataFragment.FetchingDataTrait {
+with FetchingDataFragment.FetchingDataTrait
+with RouteMergingFragment.LoadingMapFactorRouteFileTrait {
 
   implicit val thisActivity: Activity = this
   lazy val container = getUniqueId
@@ -55,6 +56,10 @@ with FetchingDataFragment.FetchingDataTrait {
     getSupportFragmentManager.beginTransaction().replace(container, FetchingDataFragment(id)).commitAllowingStateLoss()
   }
 
+  def merge(get: GPXGet): Unit = {
+    getSupportFragmentManager.beginTransaction().replace(container, RouteMergingFragment(get)).commitAllowingStateLoss()
+  }
+
   override def userWants: Unit = {
     info("user wants to scan QR code")
     scanQR()
@@ -78,11 +83,16 @@ with FetchingDataFragment.FetchingDataTrait {
   override def gpxFetched(gpx: GPXGet): Unit = {
     toast("fetched")
     info(gpx.toString())
-    delayed(startScreen(), 100)
+    merge(gpx)
   }
 
   override def gpxFetchingFailSomeError(): Unit = {
     toast("NoInternet")
     delayed(startScreen(), 100)
   }
+
+  override def done: Unit = {
+    toast("merged")
+  }
+
 }
