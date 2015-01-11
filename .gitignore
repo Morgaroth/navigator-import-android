@@ -6,3 +6,5 @@ target/
 proguard_out/*
 proguard_out
 app
+seeds.txt
+usage.txt
