@@ -123,6 +123,7 @@
 -printusage usage.txt
 -keep class spray.**
 -keepclassmembers class io.github.** {*;}
+-keepclassmembers class org.scaloid.common.SEditText { <init>(...) ;}
 -keepclassmembers class scala.concurrent.impl.Future {*;}
 -keep class spray.** { *; }
 -dontwarn scala.collection.**

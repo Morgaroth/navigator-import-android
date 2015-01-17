@@ -4,6 +4,7 @@ import android.os.{Parcelable, Parcel}
 import spray.json.{DefaultJsonProtocol, _}
 
 import scala.language.implicitConversions
+import scala.math.BigDecimal
 
 case class WaypointGPX(name: String, lat: Double, lon: Double) extends Parcelable {
   override def toString: String = s"Wpt(name=$name,latitude=$lat,longitude=$lon)"
@@ -27,7 +28,37 @@ object WaypointGPX {
 }
 
 trait WaypointGPXProtocol extends DefaultJsonProtocol {
-  implicit val WaypointGPXJsonProtocol = jsonFormat3(WaypointGPX.apply)
+
+  implicit object WaypointGPXJsonProtocol extends RootJsonFormat[WaypointGPX] {
+    val raw = jsonFormat3(WaypointGPX.apply)
+
+    override def read(json: JsValue): WaypointGPX = {
+      json match {
+        case JsObject(fields) if fields.contains("name") && fields.contains("lon") && fields.contains("lat") =>
+          try {
+            var empty = WaypointGPX("unnamed", 0D, 0D)
+            fields("name") match {
+              case JsString(value) => empty = empty.copy(name = value)
+            }
+            fields("lon") match {
+              case JsNumber(bidDecimal) if bidDecimal.isDecimalDouble =>
+                empty = empty.copy(lon = bidDecimal.doubleValue())
+            }
+            fields("lat") match {
+              case JsNumber(bidDecimal) if bidDecimal.isDecimalDouble =>
+                empty = empty.copy(lat = bidDecimal.doubleValue())
+            }
+            empty
+          } catch {
+            case _: Throwable => raw.read(json)
+          }
+        case _ => raw.read(json)
+      }
+    }
+
+    override def write(obj: WaypointGPX): JsValue = raw.write(obj)
+  }
+
 }
 
 case class GPXGet(waypoints: List[WaypointGPX]) extends android.os.Parcelable {
@@ -54,12 +85,16 @@ object GPXGet {
 trait GPXGetProtocol extends DefaultJsonProtocol with WaypointGPXProtocol {
   implicit val GPXGetJsonProtocol = jsonFormat1(GPXGet.apply)
 
-  implicit def wrapToParsableGPXGet(json: String): Object {def parseMyGPX: Either[RuntimeException, GPXGet] with Product with Serializable} = new {
-    def parseMyGPX = try Right(GPXGetJsonProtocol.read(json.parseJson))
-    catch {
-      case d: DeserializationException => Left(d)
-      case d: SerializationException => Left(d)
-    }
+  implicit def wrapToParsableGPXGet(json: String): Object {def parseMyGPX: Either[RuntimeException, GPXGet]} = new {
+    def parseMyGPX =
+      try {
+        val json1: JsValue = json.parseJson
+        Right(GPXGetJsonProtocol.read(json1))
+      }
+      catch {
+        case d: DeserializationException => Left(d)
+        case d: SerializationException => Left(d)
+      }
 
   }
 }

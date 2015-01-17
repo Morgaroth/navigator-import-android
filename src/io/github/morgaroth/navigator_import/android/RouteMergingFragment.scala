@@ -20,6 +20,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.io.Source
 import scala.language.{implicitConversions, reflectiveCalls}
+import scala.xml.XML
 
 
 object RouteMergingFragment {
@@ -60,7 +61,7 @@ class RouteMergingFragment extends FragmentWithAttached with TagUtil {
 
   override def onCreateView(inflater: LayoutInflater, container: ViewGroup, savedInstanceState: Bundle): View = {
     info("starting merging data")
-    input = new SEditText
+    input = new SEditText()
 
     val f = new SimpleDateFormat()
 
@@ -95,17 +96,20 @@ class RouteMergingFragment extends FragmentWithAttached with TagUtil {
         val destination: Some[Waypoint] = Some(fromGPXWpt(newGPX.waypoints.last))
         val wpts: List[Waypoint] = newGPX.waypoints.tail.init.map(fromGPXWpt)
         val newRoute = Route(name, departure, wpts, destination)
+        info(s"new route to append $newRoute")
         rp.copy(rest = newRoute :: rp.rest)
       }, file)
     }).map(x => x.map { FileAndRP =>
-      val (maybeRoutingPoints, file) = FileAndRP
+      info(s"writing to file $FileAndRP")
+      val (maybeRoutingPoints: Either[Throwable, RoutingPoints], file: File) = FileAndRP
       maybeRoutingPoints.right.map { rp =>
-        val xml = Core.toXML(rp).text
+        val xml = Core.toXML(rp)
         val writer = new PrintWriter(file)
-        debug(s"generated xml: $xml")
-        writer.write(xml)
+        debug(s"generated xml: ${xml.mkString}")
+        XML.write(writer, xml, enc = "UTF-8", xmlDecl = true, doctype = null)
         writer.flush()
         writer.close()
+        info(s"saved routing_points file")
         xml
       }.left.map { throwable =>
         toast("cannot perform merging")
