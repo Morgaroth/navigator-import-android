@@ -110,24 +110,23 @@
     scala.concurrent.forkjoin.LinkedTransferQueue$PaddedAtomicReference tail;
     scala.concurrent.forkjoin.LinkedTransferQueue$PaddedAtomicReference cleanMe;
 }
-# view AndroidManifest.xml #generated:16
+# view AndroidManifest.xml #generated:18
 -keep class android.test.InstrumentationTestRunner { <init>(...); }
 
-# view AndroidManifest.xml #generated:8
+# view AndroidManifest.xml #generated:10
 -keep class io.github.morgaroth.navigator_import.android.RoutesImporterActivity { <init>(...); }
 
 -dontobfuscate
--keepattributes Signature,EnclosingMethod,InnerClasses
--printseeds seeds.txt
--keepattributes *Annotation*
+-dontoptimize
 -printusage usage.txt
--keep class spray.**
--keepclassmembers class io.github.** {*;}
--keepclassmembers class org.scaloid.common.SEditText { <init>(...) ;}
--keepclassmembers class scala.concurrent.impl.Future {*;}
--keep class spray.** { *; }
--dontwarn scala.collection.**
+-printseeds seeds.txt
+-keepattributes Signature,EnclosingMethod,InnerClasses
+-keepattributes *Annotation*
+-keep class io.github.morgaroth.navigator_import.core.modelsConversions** {*;}
+-keep class io.github.morgaroth.navigator_import.android.** {*;}
 -keepclassmembers class io.github.morgaroth.navigator_import.** implements android.os.Parcelable {public static final android.os.Parcelable$Creator *;}
+-dontwarn scala.collection.**
+-dontnote scala.collection.**
+-dontnote scala.runtime.**
 -dontnote spray.json.**
 -dontnote org.scaloid.**
--dontnote io.github.morgaroth.**

@@ -8,3 +8,4 @@ proguard_out
 app
 seeds.txt
 usage.txt
+project/SigningConfig.scala

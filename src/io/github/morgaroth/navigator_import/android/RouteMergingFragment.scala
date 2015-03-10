@@ -1,19 +1,18 @@
 package io.github.morgaroth.navigator_import.android
 
-import java.io.{PrintWriter, File}
+import java.io.{File, PrintWriter}
 import java.text.SimpleDateFormat
 
-import android.os.Bundle
+import android.os.{Environment, Bundle}
 import android.view.Gravity.CENTER
 import android.view.{LayoutInflater, View, ViewGroup}
-import io.github.morgaroth.navigator_import.android.FetchingDataFragment.FetchingDataTrait
 import io.github.morgaroth.navigator_import.android.R.string.Please_wait_merging_is_in_progress
 import io.github.morgaroth.navigator_import.android.RouteMergingFragment.LoadingMapFactorRouteFileTrait
-import io.github.morgaroth.navigator_import.android.RoutesImporterActivity.BACKEND_URL
-import io.github.morgaroth.navigator_import.android.utils.{WaypointGPX, GPXGet, FragmentWithAttached, GPXGetProtocol}
+import io.github.morgaroth.navigator_import.android.utils.{MapFactorHelper, External}
+import io.github.morgaroth.navigator_import.android.utils.parcelableWrappers.RouteParcelable
 import io.github.morgaroth.navigator_import.core.Core
-import io.github.morgaroth.navigator_import.core.models.mapfactor.routeFile.{Waypoint, Route, RoutingPoints}
-import org.apache.http.client.methods.HttpGet
+import io.github.morgaroth.navigator_import.core.global.Route
+import io.github.morgaroth.navigator_import.core.models.mapfactor.routeFile.RoutingPoints
 import org.scaloid.common._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -21,7 +20,7 @@ import scala.concurrent.Future
 import scala.io.Source
 import scala.language.{implicitConversions, reflectiveCalls}
 import scala.xml.XML
-
+import scala.collection.JavaConverters._
 
 object RouteMergingFragment {
 
@@ -29,35 +28,31 @@ object RouteMergingFragment {
     def done: Unit
   }
 
-  def apply(gpx: GPXGet) = {
+  def apply(route: Route) = {
     val f = new RouteMergingFragment
-    f.setArguments(args(gpx))
+    f.setArguments(args(route))
     f
   }
 
   val ID_KEY = "id_key_RouteMergingFragment"
 
-  def args(gpx: GPXGet) = {
+  def args(route: Route) = {
     val args = new Bundle
-    args.putParcelable(ID_KEY, gpx)
+    args.putParcelable(ID_KEY, RouteParcelable(route))
     args
   }
 
 }
 
-class RouteMergingFragment extends FragmentWithAttached with TagUtil {
+
+
+class RouteMergingFragment extends utils.FragmentWithAttached with TagUtil with io.github.morgaroth.navigator_import.core.modelsConversions.toNavigator {
 
   type Interface = LoadingMapFactorRouteFileTrait
 
-  import RouteMergingFragment._
+  import io.github.morgaroth.navigator_import.android.RouteMergingFragment._
 
   var input: SEditText = _
-
-  def itudeToLong(itude: Double): Long = (itude * 60 * 60 * 1000).toLong
-
-  implicit def convertItude(d: Double): Long = itudeToLong(d)
-
-  def fromGPXWpt(x: WaypointGPX): Waypoint = Waypoint(x.name, x.lat, x.lon)
 
   override def onCreateView(inflater: LayoutInflater, container: ViewGroup, savedInstanceState: Bundle): View = {
     info("starting merging data")
@@ -65,22 +60,18 @@ class RouteMergingFragment extends FragmentWithAttached with TagUtil {
 
     val f = new SimpleDateFormat()
 
-    val newGPX = getArguments.getParcelable[GPXGet](ID_KEY)
+    val newRoute = getArguments.getParcelable[RouteParcelable](ID_KEY).toGlobalRoute.toNaviRoute
 
     val readingFileAsync: Future[Option[File]] = Future {
-      val path = "/Android/data/com.mapfactor.navigator/files/navigator/routing_points.xml"
-      val externalLocations = ExternalStorage.getAllStorageLocations
-      val sdCard = externalLocations.get(ExternalStorage.SD_CARD)
-      val externalSdCard = externalLocations.get(ExternalStorage.EXTERNAL_SD_CARD)
-      val availablePlaces = List(sdCard, externalSdCard).map(new File(_, path)).filter(file => file.exists() && file.canWrite && file.isFile && file.canRead)
-      availablePlaces match {
+      MapFactorHelper.findMapFactorHomes.filter(_.isFile) match {
         case Nil =>
           info(s"could not find routing points file")
           None
         case one :: Nil =>
+          info(s"used ${one.getAbsolutePath} as source for merging")
           Some(one)
         case _ =>
-          info("more files :/")
+          info("more places :/")
           None
       }
     }
@@ -91,11 +82,6 @@ class RouteMergingFragment extends FragmentWithAttached with TagUtil {
     }).map(x => x.map { FileAndRP =>
       val (maybeRoutingPoints, file) = FileAndRP
       (maybeRoutingPoints.right.map { rp =>
-        val name = Some(f.format(System.currentTimeMillis()))
-        val departure: Some[Waypoint] = Some(fromGPXWpt(newGPX.waypoints.head))
-        val destination: Some[Waypoint] = Some(fromGPXWpt(newGPX.waypoints.last))
-        val wpts: List[Waypoint] = newGPX.waypoints.tail.init.map(fromGPXWpt)
-        val newRoute = Route(name, departure, wpts, destination)
         info(s"new route to append $newRoute")
         rp.copy(rest = newRoute :: rp.rest)
       }, file)
@@ -104,13 +90,24 @@ class RouteMergingFragment extends FragmentWithAttached with TagUtil {
       val (maybeRoutingPoints: Either[Throwable, RoutingPoints], file: File) = FileAndRP
       maybeRoutingPoints.right.map { rp =>
         val xml = Core.toXML(rp)
-        val writer = new PrintWriter(file)
-        debug(s"generated xml: ${xml.mkString}")
-        XML.write(writer, xml, enc = "UTF-8", xmlDecl = true, doctype = null)
-        writer.flush()
-        writer.close()
-        info(s"saved routing_points file")
-        xml
+        try {
+          println(s"generated xml: ${xml.mkString}")
+          val writer = new PrintWriter(file)
+          println(s"writer has errros ${writer.checkError()}")
+          println(s"generated xml: ${xml.mkString}")
+          XML.write(writer, xml, enc = "UTF-8", xmlDecl = true, doctype = null)
+          println(s"generated xml: ${xml.mkString}")
+          writer.flush()
+          println(s"generated xml: ${xml.mkString}")
+          writer.close()
+          println(s"saved routing_points file")
+          xml
+        }catch{
+          case t:Throwable =>
+            println(s"$t fsgfdsgfdsfdsfds")
+        } finally {
+          println("fdsafdsgfdsgdf")
+        }
       }.left.map { throwable =>
         toast("cannot perform merging")
         error("cannot perform merging", throwable)

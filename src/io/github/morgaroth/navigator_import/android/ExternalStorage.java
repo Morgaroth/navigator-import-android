@@ -1,9 +1,12 @@
 package io.github.morgaroth.navigator_import.android;
 
 import android.os.Environment;
+import android.util.Log;
 
 import java.io.File;
 import java.util.*;
+
+import static java.lang.String.format;
 
 public class ExternalStorage {
 

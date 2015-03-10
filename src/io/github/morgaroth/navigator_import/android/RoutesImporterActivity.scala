@@ -2,13 +2,13 @@ package io.github.morgaroth.navigator_import.android
 
 import android.app.Activity
 import android.content.Context
-import android.os.Bundle
+import android.os.{Environment, Bundle}
 import android.support.v4.app.FragmentActivity
 import android.view.Gravity.CENTER_HORIZONTAL
-import android.view.WindowManager
-import com.droelf.gpxparser.gpxtype.GPX
+import android.view.{View, WindowManager}
 import io.github.morgaroth.navigator_import.android.build.BuildInfo
-import io.github.morgaroth.navigator_import.android.utils.{GPXGet, WithDelayed}
+import io.github.morgaroth.navigator_import.android.utils.{External, WithDelayed}
+import io.github.morgaroth.navigator_import.core.global.Route
 import org.scaloid.common._
 
 import scala.language.postfixOps
@@ -21,7 +21,8 @@ class RoutesImporterActivity extends FragmentActivity with SContext with WithDel
 with ScanQRCodeFragment.ScanQRCodeTrait
 with StartFragment.StartFragmentTrait
 with FetchingDataFragment.FetchingDataTrait
-with RouteMergingFragment.LoadingMapFactorRouteFileTrait {
+with RouteMergingFragment.LoadingMapFactorRouteFileTrait
+with DebugFragment.DebugFragmentTrait {
 
   implicit val thisActivity: Activity = this
   lazy val container = getUniqueId
@@ -38,25 +39,29 @@ with RouteMergingFragment.LoadingMapFactorRouteFileTrait {
         containerL.setId(container)
         containerL
       }
-      STextView(s"BuildNumber: ${BuildInfo.buildinfoBuildnumber}").<<(FILL_PARENT, 30 dip).>>.gravity(CENTER_HORIZONTAL)
+      STextView(s"BuildNumber: ${BuildInfo.buildinfoBuildnumber}", (v: View) => startDebug()).<<(FILL_PARENT, 30 dip).>>.gravity(CENTER_HORIZONTAL)
     })
-    startScreen()
     info("Created!")
+    startScreen()
   }
 
   def startScreen() = {
     getSupportFragmentManager.beginTransaction().replace(container, startFragment).commitAllowingStateLoss()
   }
 
+  def startDebug() = {
+    getSupportFragmentManager.beginTransaction().replace(container, DebugFragment()).commitAllowingStateLoss()
+  }
+
   def scanQR() = {
     getSupportFragmentManager.beginTransaction().replace(container, scanQRFragment).commitAllowingStateLoss()
   }
 
-  def fetchGPX(id: String) = {
+  def fetchRoute(id: String) = {
     getSupportFragmentManager.beginTransaction().replace(container, FetchingDataFragment(id)).commitAllowingStateLoss()
   }
 
-  def merge(get: GPXGet): Unit = {
+  def merge(get: Route): Unit = {
     getSupportFragmentManager.beginTransaction().replace(container, RouteMergingFragment(get)).commitAllowingStateLoss()
   }
 
@@ -72,21 +77,21 @@ with RouteMergingFragment.LoadingMapFactorRouteFileTrait {
 
   override def qrScanned(id: String): Unit = {
     toast(id.substring(0, 10))
-    delayed(fetchGPX(id), 50)
+    delayed(fetchRoute(id), 50)
   }
 
-  override def gpxFetchingFailNoInternet(): Unit = {
+  override def routeFetchingFailNoInternet(): Unit = {
     toast("NoInternet")
     delayed(startScreen(), 100)
   }
 
-  override def gpxFetched(gpx: GPXGet): Unit = {
+  override def routeFetched(route: Route): Unit = {
     toast("fetched")
-    info(gpx.toString())
-    merge(gpx)
+    info(s"routeFetched(${route.toString})")
+    merge(route)
   }
 
-  override def gpxFetchingFailSomeError(): Unit = {
+  override def routeFetchingFailSomeError(): Unit = {
     toast("NoInternet")
     delayed(startScreen(), 100)
   }
@@ -95,4 +100,8 @@ with RouteMergingFragment.LoadingMapFactorRouteFileTrait {
     toast("merged")
   }
 
+  override def ready(): Unit = {
+    toast("come back to normal")
+    delayed(startScreen(), 100)
+  }
 }

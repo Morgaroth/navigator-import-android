@@ -6,7 +6,8 @@ import android.view.{LayoutInflater, View, ViewGroup}
 import io.github.morgaroth.navigator_import.android.FetchingDataFragment.FetchingDataTrait
 import io.github.morgaroth.navigator_import.android.R.string.Please_wait_fetching_is_in_progress
 import io.github.morgaroth.navigator_import.android.RoutesImporterActivity.BACKEND_URL
-import io.github.morgaroth.navigator_import.android.utils.{FragmentWithAttached, GPXGet, GPXGetProtocol}
+import io.github.morgaroth.navigator_import.android.utils.{FragmentWithAttached, RouteProtocol}
+import io.github.morgaroth.navigator_import.core.global.Route
 import org.apache.http.client.methods.{HttpGet, HttpUriRequest}
 import org.apache.http.impl.client.DefaultHttpClient
 import org.apache.http.util.EntityUtils
@@ -19,24 +20,24 @@ import scala.language.reflectiveCalls
 object FetchingDataFragment {
 
   trait FetchingDataTrait {
-    def gpxFetched(gpx: GPXGet): Unit
+    def routeFetched(gpx: Route): Unit
 
-    def gpxFetchingFailNoInternet(): Unit
+    def routeFetchingFailNoInternet(): Unit
 
-    def gpxFetchingFailSomeError(): Unit
+    def routeFetchingFailSomeError(): Unit
   }
 
-  def apply(gpxId: String) = {
+  def apply(routeId: String) = {
     val f = new FetchingDataFragment
-    f.setArguments(args(gpxId))
+    f.setArguments(args(routeId))
     f
   }
 
   val ID_KEY = "id_key_FetchingDataFragment"
 
-  def args(gpxId: String) = {
+  def args(routeId: String) = {
     val args = new Bundle
-    args.putString(ID_KEY, gpxId)
+    args.putString(ID_KEY, routeId)
     args
   }
 
@@ -52,7 +53,7 @@ trait HTTPUtils {
 
 }
 
-class FetchingDataFragment extends FragmentWithAttached with TagUtil with HTTPUtils with GPXGetProtocol{
+class FetchingDataFragment extends FragmentWithAttached with TagUtil with HTTPUtils with RouteProtocol {
 
   import io.github.morgaroth.navigator_import.android.FetchingDataFragment.ID_KEY
 
@@ -62,23 +63,21 @@ class FetchingDataFragment extends FragmentWithAttached with TagUtil with HTTPUt
     info("starting fetching data")
     Future {
       try {
-        val getGPXRequest = new HttpGet(s"$BACKEND_URL/api/gpx/mobile/${getArguments.getString(ID_KEY)}")
+        val getGPXRequest = new HttpGet(s"$BACKEND_URL/api/mobile/${getArguments.getString(ID_KEY)}")
         val (resultCode, entity) = execute(getGPXRequest)
-        info(s"request to backend about GPX file end with status $resultCode and entity $entity")
-        val a = entity.parseMyGPX
-        info(s"parsed $entity as $a")
-        (resultCode, entity.parseMyGPX) match {
-          case (200, Right(gpx)) =>
-            info(s"fetched gpx ${gpx.toString}")
-            attached.map(_.gpxFetched(gpx)).getOrElse(warn("gpx fetched, but no activity attached"))
+        info(s"request to backend about route end with status $resultCode and entity ${entity.replaceAll("\n","").replaceAll("\t","")}")
+        (resultCode, entity.parseRoute) match {
+          case (200, Right(route)) =>
+            info(s"fetched route ${route.toString}")
+            attached.map(_.routeFetched(route)).getOrElse(warn("route fetched, but no activity attached"))
           case _ =>
             warn("not fetched")
-            attached.map(_.gpxFetchingFailSomeError()).getOrElse(warn("gpx not fetched, and no activity attached"))
+            attached.map(_.routeFetchingFailSomeError()).getOrElse(warn("route not fetched, and no activity attached"))
         }
-      }catch {
+      } catch {
         case t: Throwable =>
           error("error during fetching data from serwer", t)
-          attached.map(_.gpxFetchingFailSomeError()).getOrElse(warn("gpx not fetched, and no activity attached"))
+          attached.map(_.routeFetchingFailSomeError()).getOrElse(warn("gpx not fetched, and no activity attached"))
       }
     }
     new SFrameLayout {
