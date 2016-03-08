@@ -1,10 +1,7 @@
 package io.github.morgaroth.navigator_import.android
 
-import android.os.Bundle
-import android.view.{Gravity, LayoutInflater, View, ViewGroup}
 import io.github.morgaroth.navigator_import.android.StartFragment.StartFragmentTrait
 import io.github.morgaroth.navigator_import.android.utils.FragmentWithAttached
-import org.scaloid.common.{SButton, SFrameLayout}
 
 object StartFragment {
 
